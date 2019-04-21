@@ -8,14 +8,14 @@ import (
 	"io/ioutil"
 )
 
-type tasqAuth struct {
+type QAuth struct {
 	config      *oauth2.Config
 	authCodeURL string
 }
 
-var Auth tasqAuth
+var Auth QAuth
 
-func (auth *tasqAuth) init(cfg *QConfig) error {
+func (auth *QAuth) init(cfg *QConfig) error {
 	clientSecret, err := ioutil.ReadFile(cfg.Credentials)
 	if err != nil {
 		return err
@@ -41,7 +41,7 @@ func decodeToken(tokenString []byte) (*oauth2.Token, error) {
 	return token, err
 }
 
-func (auth *tasqAuth) getTokenSource(ctx context.Context, tokenString []byte) (oauth2.TokenSource, error) {
+func (auth *QAuth) getTokenSource(ctx context.Context, tokenString []byte) (oauth2.TokenSource, error) {
 	var tokenSource oauth2.TokenSource
 
 	token, err := decodeToken(tokenString)
@@ -52,7 +52,7 @@ func (auth *tasqAuth) getTokenSource(ctx context.Context, tokenString []byte) (o
 	return auth.config.TokenSource(ctx, token), nil
 }
 
-func (auth *tasqAuth) GetToken(authCode string) ([]byte, error) {
+func (auth *QAuth) GetToken(authCode string) ([]byte, error) {
 	var tokenString []byte
 	token, err := auth.config.Exchange(context.TODO(), authCode)
 	if err != nil {
@@ -63,6 +63,6 @@ func (auth *tasqAuth) GetToken(authCode string) ([]byte, error) {
 	return tokenString, err
 }
 
-func (auth *tasqAuth) GetAuthCodeURL() string {
+func (auth *QAuth) GetAuthCodeURL() string {
 	return auth.authCodeURL
 }
