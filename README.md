@@ -82,3 +82,65 @@ You can combine filter and sort
 ```Go
 filterdAndSortedTasks, err := svc.Tasks.List().Filter(filter).Sort(sort).Do()
 ```
+
+## Task Methods
+You can directly manipulate and perform actions on a QTask for convenience.
+```Go
+task, err := svc.Tasks.Get(tasklistid, taskid).Do()
+```
+
+1. [Deleting](#deleting)
+2. [Inserting](#inserting)
+3. [Updating](#updating)
+4. [Refreshing](#refreshing)
+5. [Move to Parent](#move-to-parent)
+6. [Move to Previous](#move-to-previous)
+7. [Move to Beginning](#move-to-beginning)
+8. [Get Time of Last Update](#get-time-of-last-update)
+
+### Deleting
+```Go
+err = task.Delete()
+```
+
+### Inserting
+Insert into another list
+```Go
+insertedTask, err := task.Insert(anotherTasklistid)
+```
+
+### Updating
+```Go
+task.Title = "change the title"
+updatedTask, err := task.Update()
+```
+
+### Refreshing
+If there have been remote changes to the task, update the task data currently stored in memory
+```Go
+err := task.Refresh()
+```
+
+### Move to Parent
+Make task a subtask to the given parent task id
+```Go
+movedTask, err := task.MoveToParent(parentTaskid)
+```
+
+### Move to Previous
+Move task after given previous task id
+```Go
+movedTask, err := task.MoveToPrevious(previousTaskid)
+```
+
+### Move to Beginning
+Moves task to beginning of list
+```Go
+movedTask, err := task.MoveToBeginning()
+```
+
+### Get Time of Last Update
+Returns time of update as type `time.Time`
+```Go
+updated, err := task.Time()
+```
