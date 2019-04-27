@@ -1,7 +1,6 @@
 package tasq
 
 import (
-	"google.golang.org/api/tasks/v1"
 	"time"
 )
 
@@ -15,19 +14,6 @@ const (
 	QOldestFirstSort = "sort.oldest_first"
 )
 
-func FlattenTasks(list []*QTask) []*tasks.Task {
-	flattenedTasks := make([]*tasks.Task, 0)
-
-	for _, task := range list {
-		flattenedTasks = append(flattenedTasks, task.Task)
-		for _, subTask := range task.Children {
-			flattenedTasks = append(flattenedTasks, subTask.Task)
-		}
-	}
-
-	return flattenedTasks
-}
-
 func raiseTasks(list []*QTask) []*QTask {
 	raisedTasks := make([]*QTask, 0)
 	positionalSort(list)
@@ -36,10 +22,10 @@ func raiseTasks(list []*QTask) []*QTask {
 	for _, task := range list {
 		if task.Parent == "" {
 			topLevelTasks[task.Id] = len(raisedTasks)
-			raisedTasks = append(raisedTasks, &QTask{Task: task.Task})
+			raisedTasks = append(raisedTasks, task)
 		} else {
 			parentIdx := topLevelTasks[task.Parent]
-			raisedTasks[parentIdx].Children = append(raisedTasks[parentIdx].Children, &QTask{Task: task.Task})
+			raisedTasks[parentIdx].Children = append(raisedTasks[parentIdx].Children, task)
 		}
 	}
 
