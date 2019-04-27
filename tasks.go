@@ -8,56 +8,61 @@ import (
 	"time"
 )
 
+type QTaskCallContext struct {
+	service    *QTasksService
+	tasklistid string
+}
+
 type QTask struct {
 	*tasks.Task
 
-	service  *QTasksService
+	ctx      *QTaskCallContext
 	Children []*QTask
 }
 
 func (task *QTask) InitNewService(tokenString []byte) error {
 	var err error
-	task.service, err = newQTasksService(tokenString)
+	task.ctx.service, err = newQTasksService(tokenString)
 	return err
 }
 
-func (task *QTask) Delete(tasklistid string) error {
-	return task.service.Delete(tasklistid, task.Id).Do()
+func (task *QTask) Delete() error {
+	return task.ctx.service.Delete(task.ctx.tasklistid, task.Id).Do()
 }
 
 func (task *QTask) Insert(tasklistid string) (*QTask, error) {
-	return task.service.Insert(tasklistid, task).Do()
+	return task.ctx.service.Insert(task.ctx.tasklistid, task).Do()
 }
 
-func (task *QTask) MoveToParent(tasklistid string, parent string) (*QTask, error) {
-	return task.service.Move(tasklistid, task.Id).Parent(parent).Do()
+func (task *QTask) MoveToParent(parent string) (*QTask, error) {
+	return task.ctx.service.Move(task.ctx.tasklistid, task.Id).Parent(parent).Do()
 }
 
-func (task *QTask) MoveToPrevious(tasklistid string, previous string) (*QTask, error) {
-	return task.service.Move(tasklistid, task.Id).Previous(previous).Do()
+func (task *QTask) MoveToPrevious(previous string) (*QTask, error) {
+	return task.ctx.service.Move(task.ctx.tasklistid, task.Id).Previous(previous).Do()
 }
 
-func (task *QTask) MoveToBeginning(tasklistid string) (*QTask, error) {
-	return task.service.Move(tasklistid, task.Id).Do()
+func (task *QTask) MoveToBeginning() (*QTask, error) {
+	return task.ctx.service.Move(task.ctx.tasklistid, task.Id).Do()
 }
 
-func (task *QTask) Patch(tasklistid string) (*QTask, error) {
-	return task.service.Patch(tasklistid, task.Id, task).Do()
+func (task *QTask) Patch() (*QTask, error) {
+	return task.ctx.service.Patch(task.ctx.tasklistid, task.Id, task).Do()
 }
 
-func (task *QTask) Update(tasklistid string) (*QTask, error) {
-	return task.service.Update(tasklistid, task.Id, task).Do()
+func (task *QTask) Update() (*QTask, error) {
+	return task.ctx.service.Update(task.ctx.tasklistid, task.Id, task).Do()
 }
 
 func (task *QTask) Time() (time.Time, error) {
 	return Time(task.Updated)
 }
 
-func (task *QTask) Refresh(tasklistid string) error {
+func (task *QTask) Refresh() error {
 	id := task.Id
 	entityTag := task.Etag
 
-	updated, err := task.service.Get(tasklistid, id).IfNoneMatch(entityTag).Do()
+	updated, err := task.ctx.service.Get(task.ctx.tasklistid, id).IfNoneMatch(entityTag).Do()
 	if err != nil {
 		return err
 	}
@@ -69,13 +74,13 @@ func (task *QTask) Refresh(tasklistid string) error {
 type QTasks struct {
 	*tasks.Tasks
 
-	service *QTasksService
-	Items   []*QTask
+	ctx   *QTaskCallContext
+	Items []*QTask
 }
 
 func (tasks *QTasks) InitNewService(tokenString []byte) error {
 	var err error
-	tasks.service, err = newQTasksService(tokenString)
+	tasks.ctx.service, err = newQTasksService(tokenString)
 	return err
 }
 
@@ -95,10 +100,10 @@ func (tasks *QTasks) Time() (time.Time, error) {
 	return latest, nil
 }
 
-func (tasks *QTasks) Refresh(tasklistid string) error {
+func (tasks *QTasks) Refresh() error {
 	entityTag := tasks.Etag
 
-	updated, err := tasks.service.List(tasklistid).IfNoneMatch(entityTag).Do()
+	updated, err := tasks.ctx.service.List(tasks.ctx.tasklistid).IfNoneMatch(entityTag).Do()
 	if err != nil {
 		return err
 	}
@@ -128,13 +133,16 @@ func newQTasksService(tokenString []byte) (*QTasksService, error) {
 type QTasksClearCall struct {
 	*tasks.TasksClearCall
 
-	service *QTasksService
+	ctx *QTaskCallContext
 }
 
 func (tasks *QTasksService) Clear(tasklistid string) *QTasksClearCall {
 	return &QTasksClearCall{
 		TasksClearCall: tasks.TasksService.Clear(tasklistid),
-		service:        tasks,
+		ctx: &QTaskCallContext{
+			service:    tasks,
+			tasklistid: tasklistid,
+		},
 	}
 }
 
@@ -155,13 +163,16 @@ func (call *QTasksClearCall) Fields(s ...googleapi.Field) *QTasksClearCall {
 type QTasksDeleteCall struct {
 	*tasks.TasksDeleteCall
 
-	service *QTasksService
+	ctx *QTaskCallContext
 }
 
 func (tasks *QTasksService) Delete(tasklistid string, taskid string) *QTasksDeleteCall {
 	return &QTasksDeleteCall{
 		TasksDeleteCall: tasks.TasksService.Delete(tasklistid, taskid),
-		service:         tasks,
+		ctx: &QTaskCallContext{
+			service:    tasks,
+			tasklistid: tasklistid,
+		},
 	}
 }
 
@@ -182,13 +193,16 @@ func (call *QTasksDeleteCall) Fields(s ...googleapi.Field) *QTasksDeleteCall {
 type QTasksGetCall struct {
 	*tasks.TasksGetCall
 
-	service *QTasksService
+	ctx *QTaskCallContext
 }
 
 func (tasks *QTasksService) Get(tasklistid string, taskid string) *QTasksGetCall {
 	return &QTasksGetCall{
 		TasksGetCall: tasks.TasksService.Get(tasklistid, taskid),
-		service:      tasks,
+		ctx: &QTaskCallContext{
+			service:    tasks,
+			tasklistid: tasklistid,
+		},
 	}
 }
 
@@ -199,7 +213,9 @@ func (call *QTasksGetCall) Context(ctx context.Context) *QTasksGetCall {
 
 func (call *QTasksGetCall) Do(opts ...googleapi.CallOption) (*QTask, error) {
 	result, err := call.TasksGetCall.Do(opts...)
-	return &QTask{Task: result, service: call.service}, err
+	return &QTask{
+		Task: result,
+		ctx:  call.ctx}, err
 }
 
 func (call *QTasksGetCall) Fields(s ...googleapi.Field) *QTasksGetCall {
@@ -215,11 +231,17 @@ func (call *QTasksGetCall) IfNoneMatch(entityTag string) *QTasksGetCall {
 type QTasksInsertCall struct {
 	*tasks.TasksInsertCall
 
-	service *QTasksService
+	ctx *QTaskCallContext
 }
 
 func (tasks *QTasksService) Insert(tasklistid string, task *QTask) *QTasksInsertCall {
-	return &QTasksInsertCall{TasksInsertCall: tasks.TasksService.Insert(tasklistid, task.Task)}
+	return &QTasksInsertCall{
+		TasksInsertCall: tasks.TasksService.Insert(tasklistid, task.Task),
+		ctx: &QTaskCallContext{
+			service:    tasks,
+			tasklistid: tasklistid,
+		},
+	}
 }
 
 func (call *QTasksInsertCall) Context(ctx context.Context) *QTasksInsertCall {
@@ -229,7 +251,9 @@ func (call *QTasksInsertCall) Context(ctx context.Context) *QTasksInsertCall {
 
 func (call *QTasksInsertCall) Do(opts ...googleapi.CallOption) (*QTask, error) {
 	result, err := call.TasksInsertCall.Do(opts...)
-	return &QTask{Task: result, service: call.service}, err
+	return &QTask{
+		Task: result,
+		ctx:  call.ctx}, err
 }
 
 func (call *QTasksInsertCall) Fields(s ...googleapi.Field) *QTasksInsertCall {
@@ -250,13 +274,19 @@ func (call *QTasksInsertCall) Previous(previous string) *QTasksInsertCall {
 type QTasksListCall struct {
 	*tasks.TasksListCall
 
-	service *QTasksService
-	filter  string
-	sort    string
+	ctx    *QTaskCallContext
+	filter string
+	sort   string
 }
 
 func (tasks *QTasksService) List(tasklistid string) *QTasksListCall {
-	return &QTasksListCall{TasksListCall: tasks.TasksService.List(tasklistid)}
+	return &QTasksListCall{
+		TasksListCall: tasks.TasksService.List(tasklistid),
+		ctx: &QTaskCallContext{
+			service:    tasks,
+			tasklistid: tasklistid,
+		},
+	}
 }
 
 func (call *QTasksListCall) CompletedMax(completedMax string) *QTasksListCall {
@@ -274,6 +304,7 @@ func (call *QTasksListCall) Context(ctx context.Context) *QTasksListCall {
 	return call
 }
 
+// TODO: Filter for deleted tasks
 func (call *QTasksListCall) Do(opts ...googleapi.CallOption) (*QTasks, error) {
 	switch call.filter {
 	case QOverdueFilter:
@@ -290,8 +321,8 @@ func (call *QTasksListCall) Do(opts ...googleapi.CallOption) (*QTasks, error) {
 	}
 
 	list := &QTasks{
-		Tasks:   result,
-		service: call.service,
+		Tasks: result,
+		ctx:   call.ctx,
 	}
 	if len(list.Items) > 0 {
 		switch call.filter {
@@ -315,7 +346,10 @@ func (call *QTasksListCall) Do(opts ...googleapi.CallOption) (*QTasks, error) {
 
 	items := make([]*QTask, 0)
 	for _, item := range result.Items {
-		items = append(items, &QTask{Task: item})
+		items = append(items, &QTask{
+			Task: item,
+			ctx:  call.ctx,
+		})
 	}
 	list.Items = raiseTasks(items)
 
@@ -357,11 +391,6 @@ func (call *QTasksListCall) PageToken(pageToken string) *QTasksListCall {
 	return call
 }
 
-//func (call *QTasksListCall) Raise(raise bool) *QTasksListCall {
-//	call.raise = raise
-//	return call
-//}
-
 func (call *QTasksListCall) ShowCompleted(showCompleted bool) *QTasksListCall {
 	call.TasksListCall.ShowCompleted(showCompleted)
 	return call
@@ -390,13 +419,16 @@ func (call *QTasksListCall) UpdateMin(updatedMin string) *QTasksListCall {
 type QTasksMoveCall struct {
 	*tasks.TasksMoveCall
 
-	service *QTasksService
+	ctx *QTaskCallContext
 }
 
 func (tasks *QTasksService) Move(tasklistid string, taskid string) *QTasksMoveCall {
 	return &QTasksMoveCall{
 		TasksMoveCall: tasks.TasksService.Move(tasklistid, taskid),
-		service:       tasks,
+		ctx: &QTaskCallContext{
+			service:    tasks,
+			tasklistid: tasklistid,
+		},
 	}
 }
 
@@ -407,7 +439,9 @@ func (call *QTasksMoveCall) Context(ctx context.Context) *QTasksMoveCall {
 
 func (call *QTasksMoveCall) Do(opts ...googleapi.CallOption) (*QTask, error) {
 	result, err := call.TasksMoveCall.Do(opts...)
-	return &QTask{Task: result}, err
+	return &QTask{
+		Task: result,
+		ctx:  call.ctx}, err
 }
 
 func (call *QTasksMoveCall) Fields(s ...googleapi.Field) *QTasksMoveCall {
@@ -428,11 +462,17 @@ func (call *QTasksMoveCall) Previous(previous string) *QTasksMoveCall {
 type QTasksPatchCall struct {
 	*tasks.TasksPatchCall
 
-	service *QTasksService
+	ctx *QTaskCallContext
 }
 
 func (tasks *QTasksService) Patch(tasklistid string, taskid string, task *QTask) *QTasksPatchCall {
-	return &QTasksPatchCall{TasksPatchCall: tasks.TasksService.Patch(tasklistid, taskid, task.Task)}
+	return &QTasksPatchCall{
+		TasksPatchCall: tasks.TasksService.Patch(tasklistid, taskid, task.Task),
+		ctx: &QTaskCallContext{
+			service:    tasks,
+			tasklistid: tasklistid,
+		},
+	}
 }
 
 func (call *QTasksPatchCall) Context(ctx context.Context) *QTasksPatchCall {
@@ -442,7 +482,9 @@ func (call *QTasksPatchCall) Context(ctx context.Context) *QTasksPatchCall {
 
 func (call *QTasksPatchCall) Do(opts ...googleapi.CallOption) (*QTask, error) {
 	result, err := call.TasksPatchCall.Do(opts...)
-	return &QTask{Task: result}, err
+	return &QTask{
+		Task: result,
+		ctx:  call.ctx}, err
 }
 
 func (call *QTasksPatchCall) Fields(s ...googleapi.Field) *QTasksPatchCall {
@@ -453,11 +495,17 @@ func (call *QTasksPatchCall) Fields(s ...googleapi.Field) *QTasksPatchCall {
 type QTasksUpdateCall struct {
 	*tasks.TasksUpdateCall
 
-	service *QTasksService
+	ctx *QTaskCallContext
 }
 
 func (tasks *QTasksService) Update(tasklistid string, taskid string, task *QTask) *QTasksUpdateCall {
-	return &QTasksUpdateCall{TasksUpdateCall: tasks.TasksService.Update(tasklistid, taskid, task.Task)}
+	return &QTasksUpdateCall{
+		TasksUpdateCall: tasks.TasksService.Update(tasklistid, taskid, task.Task),
+		ctx: &QTaskCallContext{
+			service:    tasks,
+			tasklistid: tasklistid,
+		},
+	}
 }
 
 func (call *QTasksUpdateCall) Context(ctx context.Context) *QTasksUpdateCall {
@@ -467,7 +515,9 @@ func (call *QTasksUpdateCall) Context(ctx context.Context) *QTasksUpdateCall {
 
 func (call *QTasksUpdateCall) Do(opts ...googleapi.CallOption) (*QTask, error) {
 	result, err := call.TasksUpdateCall.Do(opts...)
-	return &QTask{Task: result}, err
+	return &QTask{
+		Task: result,
+		ctx:  call.ctx}, err
 }
 
 func (call *QTasksUpdateCall) Fields(s ...googleapi.Field) *QTasksUpdateCall {
