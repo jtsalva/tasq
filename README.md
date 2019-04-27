@@ -1,6 +1,12 @@
 # tasQ
 Built on top of [google.golang.org/api/tasks/v1](https://google.golang.org/api/tasks/v1) to add extra functionality to make it easier to get started working with the Google Tasks API in Go.
 
+* [Getting Started](#getting-started)
+* [Listing Tasklists](#listing-tasklists)
+* [Listing Tasks](#listing-tasks)
+* [Filter and Sort Tasks](#filter-and-sort-tasks)
+* [Task Methods](#task-methods)
+
 ## Getting Started
 1. Enable Google Tasks API from [API Console](https://console.developers.google.com/)
 2. Create a new OAuth Client ID credential and download it as JSON
@@ -40,7 +46,7 @@ tasklists, err := svc.Tasklists.List().Do()
 tasks, err := svc.Tasks.List(tasklistId).Do()
 ```
 
-## Iterating Tasklists
+## Listing Tasklists
 ```Go
 tasklists, err := svc.Tasklists.List().Do()
 
@@ -49,14 +55,14 @@ for _, tasklist := range tasklists.Items {
 }
 ```
 
-## Iterating Tasks
+## Listing Tasks
 ```Go
 tasks, err := svc.Tasks.List().Do()
 
 for _, task := range tasks.Items {
   fmt.Println(task.Id, task.Title, task.Notes)
   
-  // Iterate sub-tasks
+  // List sub-tasks
   for _, child := range task.Children {
     fmt.Println("\t", child.Id, child.Title, child.Notes)
   }
