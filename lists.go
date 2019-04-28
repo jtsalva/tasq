@@ -223,10 +223,16 @@ func (call *QTasklistsListCall) Context(ctx context.Context) *QTasklistsListCall
 
 func (call *QTasklistsListCall) Do(opts ...googleapi.CallOption) (*QTaskLists, error) {
 	result, err := call.TasklistsListCall.Do(opts...)
+	if err != nil {
+		return &QTaskLists{}, err
+	}
 
 	items := make([]*QTaskList, 0)
 	for _, item := range result.Items {
-		items = append(items, &QTaskList{TaskList: item})
+		items = append(items, &QTaskList{
+			TaskList: item,
+			service:  call.service,
+		})
 	}
 
 	return &QTaskLists{
