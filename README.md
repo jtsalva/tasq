@@ -48,8 +48,10 @@ tasks, err := svc.Tasks.List(tasklistId).Do()
 
 ## Listing Tasklists
 ```Go
+// tasklists is of type QTaskLists
 tasklists, err := svc.Tasklists.List().Do()
 
+// tasklists.Items is of type []*QTaskList
 for _, tasklist := range tasklists.Items {
   fmt.Println(tasklist.Id, tasklist.Name)
 }
@@ -57,8 +59,10 @@ for _, tasklist := range tasklists.Items {
 
 ## Listing Tasks
 ```Go
+// tasks is of type QTasks
 tasks, err := svc.Tasks.List().Do()
 
+// tasks.Items is of type []*QTask
 for _, task := range tasks.Items {
   fmt.Println(task.Id, task.Title, task.Notes)
 
