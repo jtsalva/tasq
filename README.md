@@ -5,21 +5,21 @@ Built on top of [google.golang.org/api/tasks/v1](https://google.golang.org/api/t
 * [Listing Tasklists](#listing-tasklists)
 * [Listing Tasks](#listing-tasks)
 * [Filter and Sort Tasks](#filter-and-sort-tasks)
-* [Task Methods](#task-methods)
+* [Interacting with Tasks](#interacting-with-tasks)
 
 ## Getting Started
 1. Enable Google Tasks API from [API Console](https://console.developers.google.com/)
 2. Create a new OAuth Client ID credential and download it as JSON
 3. Configure your OAuth consent screen
-4. Understand the concepts [developers.google.com/tasks/concepts](https://developers.google.com/tasks/concepts) 
+4. Understand the concepts [developers.google.com/tasks/concepts](https://developers.google.com/tasks/concepts)
 5. Get tasq `go get -u github.com/jtsalva/tasq`
+6. Import tasq `import "github.com/jtsalva/tasq"`
 
 ```Go
 tasq.Init(&tasq.QConfig{
-  Credentials: "/path/to/credentials.json",
-  
   // Either QTasksReadWriteScope or QTasksReadOnlyScope
   Scope:       tasq.QTasksReadWriteScope,
+  Credentials: "/path/to/credentials.json",
 })
 
 // Direct users here to grant access to your
@@ -61,7 +61,7 @@ tasks, err := svc.Tasks.List().Do()
 
 for _, task := range tasks.Items {
   fmt.Println(task.Id, task.Title, task.Notes)
-  
+
   // List sub-tasks
   for _, child := range task.Children {
     fmt.Println("\t", child.Id, child.Title, child.Notes)
@@ -89,9 +89,13 @@ You can combine filter and sort
 filterdAndSortedTasks, err := svc.Tasks.List().Filter(filter).Sort(sort).Do()
 ```
 
-## Task Methods
-You can directly manipulate and perform actions on a QTask for convenience.
+## Interacting with Tasks
+You can directly manipulate and perform actions on a `QTaskList` and `QTask`.
 ```Go
+// tasklist is of type QTaskList
+tasklist, err := svc.Tasklists.Get(tasklistid).Do()
+
+// task is of type QTask
 task, err := svc.Tasks.Get(tasklistid, taskid).Do()
 ```
 
@@ -106,24 +110,32 @@ task, err := svc.Tasks.Get(tasklistid, taskid).Do()
 
 ### Deleting
 ```Go
-err = task.Delete()
+// Delete a list, including the tasks and subtasks within it
+err := tasklist.Delete()
+
+// Delete a single task
+err := task.Delete()
 ```
 
 ### Inserting
-Insert into another list
+Insert a task into another list
 ```Go
 insertedTask, err := task.Insert(anotherTasklistid)
 ```
 
 ### Updating
 ```Go
-task.Title = "change the title"
+tasklist.Title = "change tasklist title"
+updatedTasklist, err := tasklist.Update()
+
+task.Title = "change task title"
 updatedTask, err := task.Update()
 ```
 
 ### Refreshing
-If there have been remote changes to the task, update the task data currently stored in memory
+If there have been remote changes, update the data currently stored in memory
 ```Go
+err := tasklist.Refresh()
 err := task.Refresh()
 ```
 
@@ -146,7 +158,8 @@ movedTask, err := task.MoveToBeginning()
 ```
 
 ### Get Time of Last Update
-Returns time of update as type `time.Time`
+Returns time of last update as type `time.Time`
 ```Go
-updated, err := task.Time()
+tasklistUpdatedTime, err := tasklist.Time()
+taskUpdatedTime, err := task.Time()
 ```
