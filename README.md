@@ -37,6 +37,7 @@ authCode := "4/XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 token, err := tasq.Auth.GetToken(authCode)
 
 
+// Create new service using token
 svc, err := tasq.NewService(token)
 
 // List all Tasklists
