@@ -1,5 +1,5 @@
 # tasQ
-Built on top of [google.golang.org/api/tasks/v1](https://google.golang.org/api/tasks/v1) to add extra functionality to make it easier to get started working with the Google Tasks API in Go.
+Built on top of [google.golang.org/api/tasks/v1](https://google.golang.org/api/tasks/v1) adding extra functionality making it easier to get started with the Google Tasks API in Golang.
 
 * [Getting Started](#getting-started)
 * [Listing Tasklists](#listing-tasklists)
