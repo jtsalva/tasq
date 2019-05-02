@@ -67,7 +67,8 @@ tasks, err := svc.Tasks.List().Do()
 for _, task := range tasks.Items {
   fmt.Println(task.Id, task.Title, task.Notes)
 
-  // List sub-tasks
+  // List sub-tasks of task
+  // task.Children is of type []*QTask
   for _, child := range task.Children {
     fmt.Println("\t", child.Id, child.Title, child.Notes)
   }
