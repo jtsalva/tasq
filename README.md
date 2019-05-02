@@ -29,7 +29,7 @@ authURL := tasq.Auth.GetAuthCodeURL()
 // Once the user grants access and is
 // redirected to your specified URL, grab
 // the code from the query string
-authCode := "4/OPHKKL4qxLFhalqyX740oPGAAKyS79Lm3sPgFgqFQHtATBnAJW2aLARa2kABuJJhgDOciv-LAT7p4MULMaP9C1"
+authCode := "4/XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX-XXXXXXXXXXXXXXX"
 
 // The auth code can only be used once
 // to generate a token, the token is
